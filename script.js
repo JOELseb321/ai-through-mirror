@@ -1,23 +1,19 @@
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@latest';
+import { pipeline } from "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.15.0";
 
-// Load small text-generation model
-const generator = await pipeline('text-generation', 'Xenova/distilgpt2');
+// load a small sentiment-analysis model (works offline once cached)
+const classifier = await pipeline("text-classification", "Xenova/distilbert-base-uncased-finetuned-sst-2-english");
 
-const buttons = document.querySelectorAll('.tones button');
-const input = document.getElementById('inputText');
-const output = document.getElementById('output');
+const inputBox = document.getElementById("input");
+const outputBox = document.getElementById("output");
 
-buttons.forEach(btn => {
-  btn.addEventListener('click', async () => {
-    const tone = btn.dataset.tone;
-    const text = input.value.trim();
-    if (!text) return alert("Please type a message first.");
+async function mirrorTone(tone) {
+  const text = inputBox.value;
+  const result = await classifier(text);
+  let newText;
 
-    output.textContent = "Thinking...";
+  if (tone === "Polite") newText = `Perhaps say it more gently: "${text}"`;
+  else if (tone === "Confident") newText = `Say this boldly: "${text.toUpperCase()}"`;
+  else if (tone === "Emotional") newText = `Express it with feeling: "${text}!"`;
 
-    const prompt = `Rephrase this message to sound more ${tone}:\n"${text}"`;
-
-    const result = await generator(prompt, { max_new_tokens: 60 });
-    output.textContent = result[0].generated_text;
-  });
-});
+  outputBox.value = `Analysis: ${result[0].label} (${result[0].score.toFixed(2)})\n\n${newText}`;
+}
